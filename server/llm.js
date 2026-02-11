@@ -1,14 +1,12 @@
-const { OPENAI_API_KEY, OPENAI_BASE_URL = 'https://api.openai.com/v1', MODEL = 'gpt-4o' } = process.env;
-
-export const callLLM = async ({ messages, tools }) => {
-  const body = { model: MODEL, messages };
+export const callLLM = async ({ messages, tools, model, apiUrl, apiKey }) => {
+  const body = { model, messages };
   if (tools?.length) body.tools = tools;
 
-  const res = await fetch(`${OPENAI_BASE_URL}/chat/completions`, {
+  const res = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${OPENAI_API_KEY}`
+      'Authorization': `Bearer ${apiKey}`
     },
     body: JSON.stringify(body)
   });

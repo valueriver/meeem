@@ -6,11 +6,18 @@ import { saveMessage } from './db.js';
 const MAX_ROUNDS = 20;
 
 // send: 通过 ws 向前端推送消息的回调
-export const chat = async (chatId, messages, send) => {
+// 截取最近 N 轮上下文（保留 system + 最近的消息）
+const trimMessages = (messages, contextRounds) => {
+  if (!contextRounds || messages.length <= contextRounds + 1) return messages;
+  return [messages[0], ...messages.slice(-(contextRounds))];
+};
+
+export const chat = async (chatId, messages, send, { model, contextRounds, apiUrl, apiKey }) => {
   let round = 0;
 
   while (round++ < MAX_ROUNDS) {
-    const message = await callLLM({ messages, tools });
+    const trimmed = trimMessages(messages, contextRounds);
+    const message = await callLLM({ messages: trimmed, tools, model, apiUrl, apiKey });
 
     // tool_calls → 执行工具 → 继续循环
     if (Array.isArray(message.tool_calls) && message.tool_calls.length > 0) {
