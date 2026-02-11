@@ -22,13 +22,16 @@
       :messages="messages"
       :busy="busy"
       :hasMore="hasMore"
+      :title="chatTitle"
+      :wsStatus="wsStatus"
       @send="sendMessage"
       @toggle-sidebar="sidebarOpen = !sidebarOpen"
       @load-more="loadMore"
+      @open-panel="panelOpen = true"
     />
 
     <ControlPanel
-      :visible="panelOpen || wsDisconnected"
+      :visible="panelOpen"
       :systemPrompt="systemPrompt"
       :contextRounds="contextRounds"
       :apiUrl="apiUrl"
@@ -61,7 +64,11 @@ const model = ref('');
 const hasMore = ref(false);
 const loadedOffset = ref(0);
 
-const wsDisconnected = computed(() => wsStatus.value === 'disconnected');
+const chatTitle = computed(() => {
+  if (!chatId.value) return '';
+  const c = chats.value.find(c => c.id === chatId.value);
+  return c?.title || '';
+});
 
 on('chat_list', (data) => {
   chats.value = data.chats;

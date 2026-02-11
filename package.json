@@ -5,8 +5,8 @@
   "type": "module",
   "main": "index.js",
   "scripts": {
-    "dev": "node index.js & vite --config web/vite.config.js web",
-    "build": "vite build --config web/vite.config.js web",
+    "dev": "node index.js & vite --config ui/vite.config.js ui",
+    "build": "vite build --config ui/vite.config.js ui",
     "start": "node index.js"
   },
   "repository": {

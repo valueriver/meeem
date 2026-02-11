@@ -1,4 +1,4 @@
-import { getPinnedNotes } from './db.js';
+import { getPinnedNotes } from '../db.js';
 
 const PORT = process.env.PORT || 3000;
 

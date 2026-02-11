@@ -1,6 +1,10 @@
 import { createServer } from 'http';
 import { readFileSync, existsSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const PUBLIC_DIR = join(__dirname, '..', 'ui', 'dist');
 import { addNote, updateNote, deleteNote, listNotes, getNote, searchNotes } from './db.js';
 
 const MIME = {
@@ -67,7 +71,7 @@ export const httpServer = createServer(async (req, res) => {
 
   // ===== 静态文件 =====
   const url = path === '/' ? '/index.html' : path;
-  const filePath = join('public', url);
+  const filePath = join(PUBLIC_DIR, url);
 
   if (existsSync(filePath)) {
     const ext = url.slice(url.lastIndexOf('.'));

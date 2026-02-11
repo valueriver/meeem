@@ -2,12 +2,20 @@
   <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
     <!-- 顶栏 -->
     <div class="flex items-center px-4 py-3 border-b border-neutral-800">
-      <button @click="$emit('toggle-sidebar')" class="p-1 hover:bg-neutral-800 rounded-lg cursor-pointer md:hidden">
+      <button @click="$emit('toggle-sidebar')" class="p-1 hover:bg-neutral-800 rounded-lg cursor-pointer md:hidden mr-2">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
         </svg>
       </button>
-      <div class="ml-auto" />
+      <span class="text-sm text-neutral-400 truncate">{{ title }}</span>
+      <button @click="$emit('open-panel')" class="ml-auto flex items-center gap-1.5 px-2 py-1 hover:bg-neutral-800 rounded-lg cursor-pointer text-xs text-neutral-500">
+        <span class="w-2 h-2 rounded-full" :class="{
+          'bg-green-500': wsStatus === 'connected',
+          'bg-yellow-500': wsStatus === 'connecting',
+          'bg-neutral-600': wsStatus === 'disconnected'
+        }" />
+        {{ wsStatus === 'connected' ? '已连接' : wsStatus === 'connecting' ? '连接中' : '未连接' }}
+      </button>
     </div>
 
     <!-- 消息列表 -->
@@ -68,8 +76,8 @@
 <script setup>
 import { ref, nextTick, watch } from 'vue';
 
-const props = defineProps(['messages', 'busy', 'hasMore']);
-const emit = defineEmits(['send', 'toggle-sidebar', 'load-more']);
+const props = defineProps(['messages', 'busy', 'hasMore', 'title', 'wsStatus']);
+const emit = defineEmits(['send', 'toggle-sidebar', 'load-more', 'open-panel']);
 
 const input = ref('');
 const msgBox = ref(null);

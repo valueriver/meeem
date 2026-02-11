@@ -7,12 +7,20 @@ let pongTimer = null;
 
 // 响应式状态
 export const wsStatus = ref('disconnected'); // connected | disconnected | connecting
-export const wsUrl = ref(localStorage.getItem('wsUrl') || `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`);
+
+// 从 URL ?token=xxx 自动拼 WSS 地址
+const getDefaultWsUrl = () => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get('token');
+  const base = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}/ws`;
+  return token ? `${base}?token=${token}` : base;
+};
+
+export const wsUrl = ref(getDefaultWsUrl());
 
 export const connect = (url) => {
   if (url) {
     wsUrl.value = url;
-    localStorage.setItem('wsUrl', url);
   }
 
   if (ws) {
