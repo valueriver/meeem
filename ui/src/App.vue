@@ -24,10 +24,14 @@
       :hasMore="hasMore"
       :title="chatTitle"
       :wsStatus="wsStatus"
+      :mode="mode"
       @send="sendMessage"
       @toggle-sidebar="sidebarOpen = !sidebarOpen"
       @load-more="loadMore"
       @open-panel="panelOpen = true"
+      @set-mode="(m) => mode = m"
+      @tool-approve="handleApprove(true)"
+      @tool-reject="handleApprove(false)"
     />
 
     <ControlPanel
@@ -63,6 +67,7 @@ const apiKey = ref('');
 const model = ref('');
 const hasMore = ref(false);
 const loadedOffset = ref(0);
+const mode = ref('auto');
 
 const chatTitle = computed(() => {
   if (!chatId.value) return '';
@@ -85,11 +90,32 @@ const parseMessages = (raw) => {
     if (m.role === 'assistant' && m.tool_calls?.length) {
       for (const tc of m.tool_calls) {
         const args = JSON.parse(tc.function.arguments || '{}');
-        list.push({ role: 'tool', content: `> ${args.command}` });
+        list.push({ type: 'tool_call', command: args.command, reason: args.reason });
       }
       continue;
     }
-    if ((m.role === 'user' || m.role === 'assistant' || m.role === 'tool') && m.content) {
+    if (m.role === 'tool' && m._meta) {
+      // 合并到前一条 tool_call 卡片
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i].type === 'tool_call' && !list[i].result) {
+          list[i].result = m.content;
+          list[i].status = m._meta.status;
+          break;
+        }
+      }
+      continue;
+    }
+    if (m.role === 'tool' && m.content) {
+      // 没有 meta 的旧 tool 消息，尝试合并
+      for (let i = list.length - 1; i >= 0; i--) {
+        if (list[i].type === 'tool_call' && !list[i].result) {
+          list[i].result = m.content;
+          break;
+        }
+      }
+      continue;
+    }
+    if ((m.role === 'user' || m.role === 'assistant') && m.content) {
       list.push({ role: m.role, content: m.content });
     }
   }
@@ -107,12 +133,38 @@ on('chat_loaded', (data) => {
   }
 });
 
+// ask 模式：收到确认请求
+on('tool_confirm', (data) => {
+  messages.value.push({ type: 'confirm', command: data.command, reason: data.reason, pending: true });
+  busy.value = false;
+});
+
+// ask 模式：用户批准/拒绝后，服务端回传状态
+on('tool_approved', (data) => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i];
+    if (m.type === 'confirm' && !m.pending) {
+      m.status = data.approved ? 'approved' : 'rejected';
+      break;
+    }
+  }
+});
+
+// auto 模式 或 批准后：收到工具调用
 on('tool_call', (data) => {
-  messages.value.push({ role: 'tool', content: `> ${data.command}` });
+  messages.value.push({ type: 'tool_call', command: data.command, reason: data.reason });
 });
 
 on('tool_result', (data) => {
-  messages.value.push({ role: 'tool', content: data.content });
+  // 合并到前一条 tool_call 卡片
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    const m = messages.value[i];
+    if ((m.type === 'tool_call' || m.type === 'confirm') && !m.result) {
+      m.result = data.content;
+      return;
+    }
+  }
+  messages.value.push({ type: 'tool_result', content: data.content });
 });
 
 on('reply', (data) => {
@@ -178,7 +230,19 @@ const updateSettings = (settings) => {
 
 const sendMessage = (text) => {
   messages.value.push({ role: 'user', content: text });
-  send({ type: 'message', content: text });
+  send({ type: 'message', content: text, mode: mode.value });
+  busy.value = true;
+};
+
+const handleApprove = (approved) => {
+  for (let i = messages.value.length - 1; i >= 0; i--) {
+    if (messages.value[i].type === 'confirm' && messages.value[i].pending) {
+      messages.value[i].pending = false;
+      messages.value[i].status = approved ? 'approved' : 'rejected';
+      break;
+    }
+  }
+  send({ type: approved ? 'tool_approve' : 'tool_reject' });
   busy.value = true;
 };
 

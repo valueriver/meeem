@@ -13,6 +13,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     chat_id TEXT NOT NULL,
     message TEXT NOT NULL,
+    meta TEXT,
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (chat_id) REFERENCES chats(id)
   );
@@ -28,6 +29,9 @@ db.exec(`
     created_at TEXT DEFAULT (datetime('now'))
   );
 `);
+
+// 兼容旧数据库：添加 meta 列
+try { db.exec('ALTER TABLE messages ADD COLUMN meta TEXT'); } catch {}
 
 // 初始化默认设置
 const initSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
@@ -48,8 +52,8 @@ export const listChats = () => {
   return db.prepare('SELECT * FROM chats ORDER BY created_at DESC').all();
 };
 
-export const saveMessage = (chatId, msg) => {
-  db.prepare('INSERT INTO messages (chat_id, message) VALUES (?, ?)').run(chatId, JSON.stringify(msg));
+export const saveMessage = (chatId, msg, meta) => {
+  db.prepare('INSERT INTO messages (chat_id, message, meta) VALUES (?, ?, ?)').run(chatId, JSON.stringify(msg), meta ? JSON.stringify(meta) : null);
 };
 
 export const renameChat = (id, title) => {
@@ -62,17 +66,17 @@ export const deleteChat = (id) => {
 };
 
 export const getMessages = (chatId) => {
-  const rows = db.prepare('SELECT message FROM messages WHERE chat_id = ? ORDER BY id').all(chatId);
-  return rows.map((r) => JSON.parse(r.message));
+  const rows = db.prepare('SELECT message, meta FROM messages WHERE chat_id = ? ORDER BY id').all(chatId);
+  return rows.map((r) => ({ ...JSON.parse(r.message), _meta: r.meta ? JSON.parse(r.meta) : null }));
 };
 
 export const getMessagesPaged = (chatId, limit = 20, offset = 0) => {
   const total = db.prepare('SELECT COUNT(*) as count FROM messages WHERE chat_id = ?').get(chatId).count;
   const rows = db.prepare(
-    'SELECT message FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ? OFFSET ?'
+    'SELECT message, meta FROM messages WHERE chat_id = ? ORDER BY id DESC LIMIT ? OFFSET ?'
   ).all(chatId, limit, offset);
   return {
-    messages: rows.reverse().map((r) => JSON.parse(r.message)),
+    messages: rows.reverse().map((r) => ({ ...JSON.parse(r.message), _meta: r.meta ? JSON.parse(r.meta) : null })),
     total,
     hasMore: offset + limit < total
   };

@@ -12,10 +12,23 @@ export const createSession = (send) => {
   let apiKey = settings.apiKey;
   let model = settings.model;
 
+  // ask 模式的审批回调
+  let approvalResolve = null;
+
   const handleMessage = async (data) => {
     // ping/pong
     if (data.type === 'ping') {
       send({ type: 'pong' });
+      return;
+    }
+
+    // 用户批准/拒绝工具调用
+    if (data.type === 'tool_approve') {
+      if (approvalResolve) approvalResolve(true);
+      return;
+    }
+    if (data.type === 'tool_reject') {
+      if (approvalResolve) approvalResolve(false);
       return;
     }
 
@@ -129,8 +142,11 @@ export const createSession = (send) => {
       messages.push(userMsg);
       saveMessage(chatId, userMsg);
 
+      const mode = data.mode || 'auto';
+      const waitForApproval = () => new Promise(resolve => { approvalResolve = resolve; });
+
       try {
-        await chat(chatId, messages, send, { model, contextRounds, apiUrl, apiKey });
+        await chat(chatId, messages, send, { model, contextRounds, apiUrl, apiKey, mode, waitForApproval });
       } catch (e) {
         send({ type: 'error', content: e.message });
       }

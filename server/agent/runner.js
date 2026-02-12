@@ -1,18 +1,4 @@
-import { exec } from 'child_process';
-
-const bash = ({ command }) => {
-  return new Promise((resolve) => {
-    exec(command, { timeout: 30000, maxBuffer: 1024 * 1024 }, (err, stdout, stderr) => {
-      if (err) {
-        resolve(`exit code ${err.code}\n${stderr || err.message}`);
-        return;
-      }
-      resolve(stdout || stderr || '(no output)');
-    });
-  });
-};
-
-const toolMap = { bash };
+import * as functions from './functions.js';
 
 export const runTools = async (toolCalls) => {
   const results = await Promise.all(toolCalls.map(async (tc) => {
@@ -21,7 +7,7 @@ export const runTools = async (toolCalls) => {
 
     let content;
     try {
-      const fn = toolMap[name];
+      const fn = functions[name];
       if (!fn) throw new Error(`未知工具: ${name}`);
       content = await fn(args);
     } catch (e) {

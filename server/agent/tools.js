@@ -10,9 +10,13 @@ export const tools = [
           command: {
             type: 'string',
             description: '要执行的 bash 命令'
+          },
+          reason: {
+            type: 'string',
+            description: '简要说明执行此命令的原因'
           }
         },
-        required: ['command']
+        required: ['command', 'reason']
       }
     }
   }
