@@ -1,21 +1,23 @@
 <template>
   <div
-    class="bg-neutral-950 border-r border-neutral-800 flex flex-col w-64
+    class="bg-neutral-950 light:bg-neutral-100 border-r border-neutral-800 light:border-neutral-200 flex flex-col w-64
       fixed inset-y-0 left-0 z-50 transition-transform duration-200
       md:static md:translate-x-0"
     :class="open ? 'translate-x-0' : '-translate-x-full'"
   >
-    <div class="p-4 border-b border-neutral-800">
-      <button @click="$emit('new-chat')" class="w-full py-2.5 bg-neutral-800 hover:bg-neutral-700 rounded-lg text-sm cursor-pointer">
-        + 新对话
+    <div class="p-3">
+      <button @click="$emit('new-chat')" class="flex items-center gap-2 w-full px-2 py-2.5 rounded-lg text-sm cursor-pointer hover:bg-neutral-800/50 light:hover:bg-neutral-200/50 text-neutral-300 light:text-neutral-600">
+        <span class="text-lg leading-none">+</span>
+        <span>新对话</span>
       </button>
     </div>
-    <div class="flex-1 overflow-y-auto p-2 space-y-1">
+    <div class="px-5 py-1.5 text-xs text-neutral-500 font-medium">Chats</div>
+    <div class="flex-1 overflow-y-auto px-3 pb-2 space-y-1">
       <div
         v-for="c in chats"
         :key="c.id"
         class="group flex items-center rounded-lg text-sm cursor-pointer"
-        :class="c.id === chatId ? 'bg-neutral-800 text-white' : 'text-neutral-400 hover:bg-neutral-800/50'"
+        :class="[c.id === chatId ? 'bg-neutral-800 text-white light:bg-neutral-200 light:text-neutral-900' : 'text-neutral-400 hover:bg-neutral-800/50 light:text-neutral-600 light:hover:bg-neutral-200/50']"
       >
         <!-- 编辑模式 -->
         <template v-if="editing === c.id">
@@ -25,7 +27,7 @@
             @keydown.enter="confirmRename(c.id)"
             @keydown.escape="editing = null"
             @blur="confirmRename(c.id)"
-            class="flex-1 px-3 py-2 bg-neutral-700 rounded-lg text-sm text-white outline-none"
+            class="flex-1 px-3 py-2 bg-neutral-700 light:bg-white rounded-lg text-sm text-white light:text-neutral-900 outline-none"
           />
         </template>
 
@@ -52,8 +54,8 @@
     </div>
 
     <!-- 底部控制面板入口 -->
-    <div class="p-3 border-t border-neutral-800">
-      <div @click="$emit('open-panel')" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-800/50 cursor-pointer text-xs">
+    <div class="p-3 border-t border-neutral-800 light:border-neutral-200">
+      <div @click="$emit('open-panel')" class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-neutral-800/50 light:hover:bg-neutral-200/50 cursor-pointer text-xs">
         <svg class="w-4 h-4 text-neutral-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

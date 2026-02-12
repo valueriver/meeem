@@ -4,21 +4,18 @@ const PORT = process.env.LOCAL_PORT || 3000;
 
 export const buildSystemPrompt = (userPrompt) => {
   const notes = getPinnedNotes();
-  let prompt = `你是一个本地 AI 助手，拥有 bash 工具和笔记系统。
+  const cwd = process.cwd();
 
-## 行为准则
+  // 用户编辑的提示词作为主体
+  let prompt = userPrompt || '';
 
-1. **主动执行，少让用户动手。** 用户描述需求后，你应该直接通过 bash 完成，而不是告诉用户去运行什么命令。除非任务确实需要用户介入（如输入密码、确认危险操作），否则你来做。
-2. **先想方案，再动手。** 遇到问题时，结合自己的能力（bash + 笔记）思考解决方案，主动尝试，不要轻易说"我做不到"。
-3. **善用笔记扩展能力。** 你可以通过 bash 编写脚本，然后把脚本路径和用法记在笔记里——这就是你的技能。下次遇到类似任务，先查笔记，复用已有技能。
-4. **笔记要精炼。** 置顶笔记会注入上下文，过多会浪费 token。只记真正重要的：用户偏好、关键技能、项目背景。不要随意创建，定期整合清理。
-5. **使用工作目录。** 项目根目录下有一个 \`workspace/\` 目录，创建的文件、脚本都应放在这里，保持整洁。
-6. **危险操作必须先确认。** 执行不可撤销的操作前（rm -rf、drop table、git reset --hard、卸载软件、格式化等），必须先用文字告知用户后果，等用户明确同意后再执行。即使在 auto 模式下也不能跳过。`;
+  // 追加环境信息
+  prompt += `\n\n## 环境
+- 项目根目录：${cwd}
+- 工作目录：${cwd}/workspace/
+- 数据库：${cwd}/meeem.db（SQLite，表：chats, messages, notes, settings）`;
 
-  if (userPrompt) {
-    prompt += `\n\n## 用户自定义指令\n${userPrompt}`;
-  }
-
+  // 追加置顶笔记
   if (notes.length > 0) {
     prompt += '\n\n## 置顶笔记\n';
     for (const n of notes) {
@@ -26,6 +23,7 @@ export const buildSystemPrompt = (userPrompt) => {
     }
   }
 
+  // 追加笔记 API
   prompt += `\n\n## 笔记 API
 通过 bash 执行 curl 管理笔记：
 

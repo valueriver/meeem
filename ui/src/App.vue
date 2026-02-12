@@ -1,10 +1,10 @@
 <template>
-  <div class="h-screen flex bg-neutral-900 text-neutral-200">
+  <div class="h-screen flex bg-neutral-900 text-neutral-200 light:bg-white light:text-neutral-800">
     <!-- 遮罩 -->
     <div
       v-if="sidebarOpen"
       @click="sidebarOpen = false"
-      class="fixed inset-0 bg-black/50 z-40 md:hidden"
+      class="fixed inset-0 bg-black/50 light:bg-black/30 z-40 md:hidden"
     />
 
     <Sidebar
@@ -41,14 +41,16 @@
       :apiUrl="apiUrl"
       :apiKey="apiKey"
       :model="model"
+      :theme="theme"
       @close="panelOpen = false"
       @update-settings="updateSettings"
+      @set-theme="setTheme"
     />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { connect, send, on, wsStatus } from './ws.js';
 import Sidebar from './components/Sidebar.vue';
 import Chat from './components/Chat.vue';
@@ -68,6 +70,13 @@ const model = ref('');
 const hasMore = ref(false);
 const loadedOffset = ref(0);
 const mode = ref('auto');
+const theme = ref(localStorage.getItem('theme') || 'dark');
+
+const setTheme = (t) => {
+  theme.value = t;
+  localStorage.setItem('theme', t);
+  document.documentElement.classList.toggle('light', t === 'light');
+};
 
 const chatTitle = computed(() => {
   if (!chatId.value) return '';
